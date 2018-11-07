@@ -45,3 +45,33 @@ abstract class Squash {
     return x > 0 ? x : 0;
   }
 }
+
+class Neuron {
+  int ID = uid();
+  int state = 0;
+  int old = 0;
+  int activation = 0;
+  double bias = Connection.random.nextDouble() * .2 - 1;
+
+  Connection _selfConnection;
+
+  double Function(double, bool) squash = Squash.logistic;
+
+  Neuron() {
+    _selfConnection = new Connection(this, this, 0.0);
+  }
+
+  static int uid() {
+    return neurons++;
+  }
+
+  static NeuronQuantity quantity() {
+    return new NeuronQuantity(neurons: neurons, connections: connections);
+  }
+}
+
+class NeuronQuantity {
+  final int neurons, connections;
+
+  const NeuronQuantity({this.neurons, this.connections});
+}

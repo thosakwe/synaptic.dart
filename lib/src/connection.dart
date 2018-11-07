@@ -1,12 +1,12 @@
 import 'dart:math';
+import 'neuron.dart';
 
 var connections = 0;
 
-class Connection<T> {
-  static final _rnd = new Random();
+class Connection {
+  static final random = new Random();
 
-  // TODO: What is the type of these...?
-  final T from, to;
+  final Neuron from, to;
 
   final ID = uid();
 
@@ -19,7 +19,7 @@ class Connection<T> {
 
   Connection(this.from, this.to, [this.weight]) {
     assert(from != null && to != null, 'Connection Error: Invalid neurons');
-    weight ??= _rnd.nextDouble() * .2 - .1;
+    weight ??= random.nextDouble() * .2 - .1;
   }
 
   static int uid() => connections++;
