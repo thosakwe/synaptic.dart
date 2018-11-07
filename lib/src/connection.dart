@@ -12,10 +12,9 @@ class Connection {
 
   double weight;
 
-  var gain = 1;
+  var gain = 1.0;
 
-  // TODO: gater?
-  var gater;
+  Neuron gater;
 
   Connection(this.from, this.to, [this.weight]) {
     assert(from != null && to != null, 'Connection Error: Invalid neurons');

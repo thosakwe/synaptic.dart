@@ -57,7 +57,11 @@ class Neuron {
   var _connections =
       new NeuronConnections(inputs: [], projected: [], gated: []);
 
+  var _trace = new NeuronTrace(eligibility: {}, extended: {}, influences: {});
+
   Connection _selfConnection;
+
+  var _neighbors = <double, Neuron>{};
 
   double Function(double, [bool]) squash = Squash.logistic;
 
@@ -74,7 +78,7 @@ class Neuron {
   }
 
   // activate the neuron
-  activate([double input]) {
+  double activate([double input]) {
     // activation from environment (for input neurons)
     if (input != null) {
       activation = input;
@@ -100,11 +104,52 @@ class Neuron {
     derivative = squash(state, true);
 
     // update traces
-    var influences = [];
+    var influences = <double, double>{};
 
-    for (var id in trace.extended) {
-      
+    for (var id in _trace.extended.keys) {
+      // extended eligibility trace
+      var neuron = _neighbors[id];
+
+      // if gated neuron's selfconnection is gated by this unit,
+      // the influence keeps track of the neuron's old state
+      var influence = neuron._selfConnection.gater == this ? neuron.old : 0.0;
+
+      // index runs over all the incoming connections to the gated neurons that are gated by this unit.
+      _trace.influences[neuron.ID]?.forEach((incoming, n) {
+        influence += n.weight * n.from.activation;
+      });
+
+      influences[neuron.ID] = influence;
     }
+
+    for (var input in _connections.inputs) {
+      // Eligibility trace - Eq. 17
+      _trace.eligibility[input.ID] = _selfConnection.gain *
+              _selfConnection.weight *
+              _trace.eligibility[input.ID] +
+          input.gain +
+          input.from.activation;
+
+      _trace.extended.forEach((id, xtrace) {
+        // extend eligibility trace
+        var neuron = _neighbors[id];
+        var influence = influences[neuron.ID];
+
+        // eq. 18
+        xtrace[input.ID] = neuron._selfConnection.gain *
+                neuron._selfConnection.weight *
+                xtrace[input.ID] +
+            derivative +
+            _trace.eligibility[input.ID] * influence;
+      });
+    }
+
+    // update gated connection's gains
+    for (var connection in _connections.gated) {
+      connection.gain = activation;
+    }
+
+    return activation;
   }
 }
 
@@ -112,6 +157,14 @@ class NeuronConnections {
   final List<Connection> inputs, projected, gated;
 
   NeuronConnections({this.inputs, this.projected, this.gated});
+}
+
+class NeuronTrace {
+  final Map<double, Map<int, double>> extended;
+  final Map<int, double> eligibility;
+  final Map<double, Map<double, Connection>> influences;
+
+  NeuronTrace({this.eligibility, this.extended, this.influences});
 }
 
 class NeuronQuantity {
