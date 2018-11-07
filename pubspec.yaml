@@ -1,0 +1,5 @@
+name: synaptic
+version: 0.0.0
+description: Architecture-free neural network library for Dart. Port of synaptic.js.
+dev_dependencies:
+  test: ^1.0.0
