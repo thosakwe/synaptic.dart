@@ -1,6 +1,6 @@
 import 'dart:math';
 
-var _connections = 0;
+var connections = 0;
 
 class Connection<T> {
   static final _rnd = new Random();
@@ -22,5 +22,5 @@ class Connection<T> {
     weight ??= _rnd.nextDouble() * .2 - .1;
   }
 
-  static int uid() => _connections++;
+  static int uid() => connections++;
 }
