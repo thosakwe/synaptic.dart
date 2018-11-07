@@ -59,6 +59,8 @@ class Neuron {
 
   var _trace = new NeuronTrace(eligibility: {}, extended: {}, influences: {});
 
+  var _error = new NeuronError(responsibility: 0.0, projected: 0.0, gated: 0.0);
+
   Connection _selfConnection;
 
   var _neighbors = <double, Neuron>{};
@@ -151,6 +153,77 @@ class Neuron {
 
     return activation;
   }
+
+  // back-propagate the error
+  void propagate(double rate, [double target]) {
+    // error accumulator
+    var error = 0.0;
+
+    // whether or not this neuron is in the output layer
+    var isOutput = target != null;
+
+    // output neurons get their error from the environment
+    if (isOutput)
+      _error.responsibility = _error.projected = target - activation;
+    else {
+      // other neurons compute their error responsibilities by backpropagation
+      //
+      // error responsibilities from all the connections project from this neuron
+      for (var connection in _connections.projected) {
+        var neuron = connection.to;
+        // Eq. 21
+        error +=
+            neuron._error.responsibility * connection.gain * connection.weight;
+      }
+
+      // projected error responsibility
+      _error.projected = derivative * error;
+
+      error = 0.0;
+
+      // error responsibilities from all the connections gated by this neuron
+      for (var id in _trace.extended.keys) {
+        var neuron = _neighbors[id]; // gated neuron
+        var influence = neuron._selfConnection.gater == this
+            ? neuron.old
+            : 0.0; // if gated neuron's selfconnection is gated by this neuron
+
+        // index runs over all the connections to the gated neuron that are gated by this neuron
+        _trace.influences[id].forEach((input, connection) {
+          // captures the effect that the input connection of this neuron have, on a neuron which its input/s is/are gated by this neuron
+          influence += connection.weight *
+              _trace.influences[neuron.ID][input].from.activation;
+        });
+
+        // eq. 22
+        error += neuron._error.responsibility * influence;
+      }
+
+      // gated error responsibility
+      _error.gated = derivative * error;
+
+      // error responsibility - Eq. 23
+      _error.responsibility = _error.projected + _error.gated;
+    }
+
+    // learning rate
+    rate ??= .1;
+
+    // adjust all the neuron's incoming connections
+    for (var input in _connections.inputs) {
+      // Eq. 24
+      var gradient = _error.projected * _trace.eligibility[input.ID];
+      for (var id in _trace.extended.keys) {
+        var neuron = _neighbors[id];
+        gradient +=
+            neuron._error.responsibility * _trace.extended[neuron.ID][input.ID];
+      }
+      input.weight += rate * gradient; // adjust weights - aka learn
+    }
+
+    // adjust bias
+    bias += rate * _error.responsibility;
+  }
 }
 
 class NeuronConnections {
@@ -172,4 +245,10 @@ class NeuronQuantity {
   final int connections;
 
   const NeuronQuantity({this.neurons, this.connections});
+}
+
+class NeuronError {
+  double responsibility, projected, gated;
+
+  NeuronError({this.responsibility, this.projected, this.gated});
 }
