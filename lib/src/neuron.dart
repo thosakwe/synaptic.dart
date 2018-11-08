@@ -349,6 +349,11 @@ class Neuron {
     bias = Connection.random.nextDouble() * .2 - .1;
     old = state = activation = 0.0;
   }
+
+  // TODO: What about the optimize() call?
+  // Clearly, it generates a JS function.
+  // Creating a new isolate for each neuron is too heavyweight
+  // to be worthwhile at all.
 }
 
 class NeuronConnectionStatus {
