@@ -224,7 +224,62 @@ class Neuron {
     // adjust bias
     bias += rate * _error.responsibility;
   }
+
+  Connection project(Neuron neuron, double weight) {
+    // self-connection
+    if (neuron == this) {
+      return _selfConnection..weight = 1.0;
+    }
+
+    // check if connection already exists
+    var connected = connectionStatus(neuron);
+  }
+
+  /// Returns whether the neuron is self-connected.
+  bool get isSelfConnected => _selfConnection.weight != 0.0;
+
+  // whether the neuron is connected to another neuron (parameter)
+  NeuronConnectionStatus connectionStatus(Neuron neuron) {
+    var result = new NeuronConnectionStatus(type: null, connection: null);
+
+    if (this == neuron) {
+      if (isSelfConnected) {
+        return result
+          ..type = NeuronConnectionStatusType.selfConnection
+          ..connection = _selfConnection;
+      } else {
+        return null;
+      }
+    }
+
+    NeuronConnectionStatus walkType(
+        List<Connection> type, NeuronConnectionStatusType outType) {
+      for (var connection in type) {
+        if (connection.to == neuron || connection.from == neuron) {
+          return result
+            ..type = outType
+            ..connection = connection;
+        }
+      }
+
+      return null;
+    }
+
+    return walkType(_connections.inputs, NeuronConnectionStatusType.inputs) ??
+        walkType(
+            _connections.projected, NeuronConnectionStatusType.projected) ??
+        walkType(_connections.gated, NeuronConnectionStatusType.gated);
+  }
 }
+
+class NeuronConnectionStatus {
+  NeuronConnectionStatusType type;
+  Connection connection;
+
+  NeuronConnectionStatus({this.type, this.connection});
+}
+
+enum NeuronConnectionStatusType { selfConnection, inputs, projected, gated }
 
 class NeuronConnections {
   final List<Connection> inputs, projected, gated;
