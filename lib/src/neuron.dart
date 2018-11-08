@@ -331,6 +331,24 @@ class Neuron {
 
     _error.responsibility = _error.projected = _error.gated = 0.0;
   }
+
+  /// All the connections are randomized, and the traces are cleared.
+  void reset() {
+    clear();
+
+    for (var type in [
+      _connections.inputs,
+      _connections.projected,
+      _connections.gated
+    ]) {
+      for (var connection in type) {
+        connection.weight = Connection.random.nextDouble() * .2 - .1;
+      }
+    }
+
+    bias = Connection.random.nextDouble() * .2 - .1;
+    old = state = activation = 0.0;
+  }
 }
 
 class NeuronConnectionStatus {
