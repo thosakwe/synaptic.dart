@@ -225,7 +225,7 @@ class Neuron {
     bias += rate * _error.responsibility;
   }
 
-  Connection project(Neuron neuron, double weight) {
+  Connection project(Neuron neuron, [double weight]) {
     // self-connection
     if (neuron == this) {
       return _selfConnection..weight = 1.0;
@@ -233,6 +233,27 @@ class Neuron {
 
     // check if connection already exists
     var connected = connectionStatus(neuron);
+    if (connected?.type == NeuronConnectionStatusType.projected) {
+      // update connection
+      if (weight != null) connected.connection.weight = weight;
+      // return existing connection
+      return connected.connection;
+    }
+
+    // create a new connection
+    var connection = new Connection(this, neuron, weight);
+
+    // reference all the connections and traces
+    _connections.projected[connection.ID] = connection;
+    _neighbors[neuron.ID] = neuron;
+    neuron._connections.inputs[connection.ID] = connection;
+    neuron._trace.eligibility[connection.ID] = 0.0;
+
+    neuron._trace.extended.forEach((id, trace) {
+      trace[connection.ID] = 0.0;
+    });
+
+    return connection;
   }
 
   /// Returns whether the neuron is self-connected.
