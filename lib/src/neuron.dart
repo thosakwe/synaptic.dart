@@ -256,6 +256,31 @@ class Neuron {
     return connection;
   }
 
+  void gate(Connection connection) {
+    // add connection to gated list
+    _connections.gated[connection.ID] = connection;
+
+    var neuron = connection.to;
+    if (!_trace.extended.containsKey(neuron.ID)) {
+      // extended trace
+      _neighbors[neuron.ID] = neuron;
+      var xtrace = _trace.extended[neuron.ID] = {};
+      for (var input in _connections.inputs) {
+        xtrace[input.ID] = 0.0;
+      }
+    }
+
+    // keep track
+    if (_trace.influences.containsKey(neuron.ID)) {
+      var map = _trace.influences[neuron.ID];
+      map[map.length.toDouble()] = connection;
+    } else
+      _trace.influences[neuron.ID] = {0.0: connection};
+
+    // set gater
+    connection.gater = this;
+  }
+
   /// Returns whether the neuron is self-connected.
   bool get isSelfConnected => _selfConnection.weight != 0.0;
 
