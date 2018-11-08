@@ -316,6 +316,21 @@ class Neuron {
             _connections.projected, NeuronConnectionStatusType.projected) ??
         walkType(_connections.gated, NeuronConnectionStatusType.gated);
   }
+
+  /// Clears all the traces (the neuron forgets it's context, but the connections remain intact)
+  void clear() {
+    for (var trace in _trace.eligibility.keys) {
+      _trace.eligibility[trace] = 0.0;
+    }
+
+    _trace.extended.forEach((trace, map) {
+      for (var extended in map.keys) {
+        map[extended] = 0.0;
+      }
+    });
+
+    _error.responsibility = _error.projected = _error.gated = 0.0;
+  }
 }
 
 class NeuronConnectionStatus {
